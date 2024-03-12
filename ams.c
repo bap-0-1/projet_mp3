@@ -7,9 +7,9 @@ s_song readAMS(char* fileName){
         s_song mySong;
         int charRead;
         s_tick myCurrentTick;
-        int tickNumber = 0;
-        int noteNumber = 0;
-        int accordNumber = 0;
+        int tickNumber = 0;//Conteur du nombre de tick
+        int noteNumber = 0;//Conteur du nombre de note dans le tick 
+        int accordNumber = 0;//Conteur du nimbre de note jouée dans le tick
 	int sizeLine = 0;
         FILE* myFile = fopen(fileName, "r");
 	char* line = NULL;
@@ -26,8 +26,9 @@ s_song readAMS(char* fileName){
 	//Lecture des ticks, lecture charactère par caractère
 	while((charRead = fgetc(myFile)) != 'EOF'){
                 // Enumération des cas en fonction du caractère lu
+
 		// Caractère de fin
-		if (charRead == -1){
+		if (charRead == -1 || charRead == '%'){
 			mySong.tickTab[tickNumber] = myCurrentTick;
 			tickNumber++;
 			break;
@@ -70,94 +71,141 @@ s_song readAMS(char* fileName){
 
 }
 
-int findNoteFromSymbol(char* symbol){
-	for (int i=0;i < sizeof(convertSymbolesNotes)/sizeof(notes);i++){
-		if(strcmp(convertSymbolesNotes[i].symbole, symbol)){
+int findNoteFromSymbol(char symbol[4]){
+	for (int i=0;i < 60;i++){
+		if(strcmp(convertSymbolesNotes[i].symbole, symbol) == 0){
 			return convertSymbolesNotes[i].note;
 		}
 	}
+	return 0;
 }
 
 void createAMS(char* txtFileName, char* amsFileName){
-	char title[MAX_SIZE_TITLE] = {0};
-	char bpm[3];
-	char* line = NULL;
-	FILE* txtFile = fopen(txtFileName, "r");
-	FILE* amsFile = fopen(amsFileName, "w");
-	int noteRondeCounter = 0;
-	char noteRondeBuffer[3] = {0};
-	int noteAccentBuffer[60] = {0};
-	int croixOuChapo[MAX_NUMBER_TICKS][60] = {0}; // 1 => croix; 2 => chapo 
-	int sizeLine;
-	int tickCounter = 0;
-	int  myTicksList[MAX_NUMBER_TICKS][4] = {0};
+	int sizeLine;//Variable inutile
+	int len;//Taille de la ligne lue
+	int tickCounter = 0;//Conteur du nombre de tick (1 tick = 1 demi-temps)
+	int partition[MAX_NUMBER_TICKS][60] = {0}; // 1 => croix; 2 => chapo; 0 => pas de notes 
+	int noteAccentBuffer[60] = {0};//Conteur du nombre de note prolongée en fonction de l'accentuation
+	char* amsFileContent = NULL; // Zone d'ecriture pour le contenu du fichier ams
+	char title[MAX_SIZE_TITLE] = {0};//Variable de stockage du titre
+	char bpm[4] = {0};//Variable de stockage des bpm
+	char* line = NULL;//Variable de stockage des lignes
+	FILE* txtFile = fopen(txtFileName, "r");//Pointeur de fichier
+	FILE* amsFile = fopen(amsFileName, "w");//Pointeur de fichier
 	//Récupérer le titre
 	getline(&line, &sizeLine, txtFile);
 	strcpy(title, line);
 	//Récupérer le bpm
 	getline(&line, &sizeLine, txtFile);
-	strcpy(bpm, line);
+	strncpy(bpm, line, 3);
 	//Saut de ligne
 	getline(&line, &sizeLine, txtFile);
-	//Lire les tick
-	int len;
+	//Boucle de lecture des ticks (lecture ligne par ligne)
 	while((len = getline(&line, &sizeLine, txtFile)) != -1){
-		int myTick[4] = {0};
-		char symbol[3];
-		int accent;
 		int charRead;
-		int symbolCounter = 0;
-		int readingSymbol = 1;
-		int noteCounter = 0;
+		int myNote;//Stockage de la note sous forme numérique
+		char symbol[4] = {0};//Stockage de la note sous forme de caractères
+		int symbolCounter = 0;//Conteur du nombre de caractère pour les notes
+		int readingSymbol = 1; //Booleen de lecture de note ou d'accentutation; 1=> lecture note et 0 => lecture accentuation
+		//Ajout d'une note si une note sur plus d'un demi-temps (Blanche, Noire, Ronde) a été jouée
 		for (int i =0; i< 60; i++){
 			if (noteAccentBuffer[i] != 0){
-				myTick[noteCounter] = i+1;
-				myTicksList[tickCounter][noteCounter] = i+1;
-				noteCounter++;
 				noteAccentBuffer[i]--;
-				croixOuChapo[tickCounter][i] = 1;
+				partition[tickCounter][i] = 1;
 			}
 		}
-		//Lire les notes
+		//Lire les notes (lecture caractère par caractères)
 		for (int i = 0; i< len;i++){
 			charRead = line[i];
+			//Si on lit une note
 			if (readingSymbol == 1 && charRead != ',' && charRead != ' '){
 				symbol[symbolCounter] = charRead;
 				symbolCounter++;
 			}
+			//Si on a finit de lire une note
 			else if (readingSymbol == 1 && charRead == ' '){
 				readingSymbol = 0;
 				symbolCounter = 0;
-				myTick[noteCounter] = findNoteFromSymbol(symbol);
-				myTicksList[tickCounter][noteCounter] = myTick[noteCounter];
-				croixOuChapo[tickCounter][myTick[noteCounter]-1] = 2;
-				noteCounter++;
+				myNote = findNoteFromSymbol(symbol);
+				partition[tickCounter][myNote-1] = 2;
+				strncpy(symbol, "", 3);
 			}
+			//Si on lit une accentuation (note sur plus d'un demi-temps), ajout de la note sur les ticks suivant
 			else if (readingSymbol == 0 && charRead != ',' && charRead != ' '){
 				if (charRead == 'R'){
-					noteAccentBuffer[myTick[noteCounter-1]-1] = 7;
+					noteAccentBuffer[myNote-1] = 7;
 				}
 				else if (charRead == 'B'){
-					noteAccentBuffer[myTick[noteCounter-1]-1] = 3;
+					noteAccentBuffer[myNote-1] = 3;
 				}
 				else if (charRead == 'N'){
-					noteAccentBuffer[myTick[noteCounter-1]-1] = 1;
+					noteAccentBuffer[myNote-1] = 1;
 				}
 			}
+			//Sinon si on lit un espace en mode lecture d'accentuation => c'est lespace juste avant la prochaine note, on passe donc en mode lecture de note
 			else if (readingSymbol == 0 && charRead == ' '){
 				readingSymbol = 1;
 			}
 		}
-		//strncpy(myTicksList[tickCounter], myTick, 12);
-		tickCounter++;
+		tickCounter++;//Passage au prochain tick
 	}
 	fclose(txtFile);
-	fclose(amsFile);
 	free(line);
+	//Ecrire le fichier AMS
+	
+	amsFileContent = (char *)malloc(MAX_SIZE_LINE*(tickCounter+3));
+	//Vider le contenu de amsFileContent
+	strncpy(amsFileContent, "\0", MAX_SIZE_LINE*(tickCounter+3));
+	//Ecrire le titre
+	strcat(amsFileContent, title);
+	//Ecrire les bpm
+	strcat(amsFileContent, bpm);
+	strcat(amsFileContent, "\n\n    ");
+	//Ecrire la ligne d'en-tête du fichier ams
+	for (int i=1; i <=60;i++){
+		char toConcatenate[3] = {0};
+		if (i < 10){
+			toConcatenate[0] = 0x30;
+			toConcatenate[1] = i+0x30;
+		}
+		else{
+			sprintf(toConcatenate, "%d", i);
+		}
+		toConcatenate[2] = 0x20;
+		strcat(amsFileContent, toConcatenate);
+	}
+	strcat(amsFileContent, "\n");
+	//Ecrire les lignes correspondants à chaques demi-temps (demi-temps = 1 tick)
+	for (int i= 1; i <= tickCounter; i++){
+		char currentLine[MAX_SIZE_LINE] = {0};
+		char buffer[4] = {0};
+		//Ajout des 0 de débuts de ligne en fonction du numéro du tick
+		if (i < 100){
+			if (i < 10){
+				strcat(currentLine, "0");
+			}
+			strcat(currentLine, "0");
+		}
+		sprintf(buffer, "%d", i);
+		strcat(currentLine, buffer);
+		strcat(currentLine, "|");
+		//Ecrire les notes de chaque tick en fonction des informations stockes dans la partition
+		for (int j = 0; j < 60; j++){
+			if (partition[i-1][j] == 1){
+				strcat(currentLine, "x |");
+			}
+			else if(partition[i-1][j] == 2){
+				strcat(currentLine, "^ |");
+			}
+			else if (partition[i-1][j] == 0){
+				strcat(currentLine, "  |");
+			}
+		}
+		strcat(currentLine, "\n");
+		strcat(amsFileContent, currentLine); 
+	}
+	printf("%s", amsFileContent);
+	free(amsFileContent);
+	fclose(amsFile);
 
-}
-//trm
-int main(){
-        createAMS("fichiers_musicaux/bohemian_rhapsody.txt", "fichiers_musicaux/bohemian_rhapsody_moi.ams");
-        return 0;
 }
