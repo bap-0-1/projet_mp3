@@ -2,6 +2,61 @@
 #include "ams.h"
 #include <string.h>
 
+#ifdef _WIN32
+size_t getline(char **lineptr, size_t *n, FILE *stream) {
+    char *bufptr = NULL;
+    char *p = bufptr;
+    size_t size;
+    int c;
+
+    if (lineptr == NULL) {
+        return -1;
+    }
+    if (stream == NULL) {
+        return -1;
+    }
+    if (n == NULL) {
+        return -1;
+    }
+    bufptr = *lineptr;
+    size = *n;
+
+    c = fgetc(stream);
+    if (c == EOF) {
+        return -1;
+    }
+    if (bufptr == NULL) {
+        bufptr = malloc(128);
+        if (bufptr == NULL) {
+            return -1;
+        }
+        size = 128;
+    }
+    p = bufptr;
+    while(c != EOF) {
+        if ((p - bufptr) > (size - 1)) {
+            size = size + 128;
+            bufptr = realloc(bufptr, size);
+            if (bufptr == NULL) {
+                return -1;
+            }
+        }
+        *p++ = c;
+        if (c == '\n') {
+            break;
+        }
+        c = fgetc(stream);
+    }
+
+    *p++ = '\0';
+    *lineptr = bufptr;
+    *n = size;
+
+    return p - bufptr - 1;
+}
+#endif
+
+
 s_song readAMS(char* fileName){
 	//Définir les variables locales
         s_song mySong;
@@ -11,8 +66,19 @@ s_song readAMS(char* fileName){
         int noteNumber = 0;//Conteur du nombre de note dans le tick 
         int accordNumber = 0;//Conteur du nimbre de note jouée dans le tick
 	int sizeLine = 0;
-        FILE* myFile = fopen(fileName, "r");
 	char* line = NULL;
+	FILE* myFile = fopen(fileName, "r");
+	if (myFile == NULL){
+		mySong.tpm = 0;
+		strncpy(mySong.title, "", MAX_SIZE_TITLE);
+		for (int i = 0; i<MAX_NUMBER_TICKS;i++){
+			mySong.tickTab[i].accent = 0;
+			for (int j=0; j <4;j++){
+				mySong.tickTab[i].note[j] = 0;
+			}
+		}
+		return mySong;
+	}
 	//Lire le titre de la musique
 	getline(&line, &sizeLine, myFile);
 	strcpy(mySong.title, line);
@@ -204,7 +270,8 @@ void createAMS(char* txtFileName, char* amsFileName){
 		strcat(currentLine, "\n");
 		strcat(amsFileContent, currentLine); 
 	}
-	printf("%s", amsFileContent);
+	//printf("%s", amsFileContent);
+	fputs(amsFileContent, amsFile);
 	free(amsFileContent);
 	fclose(amsFile);
 

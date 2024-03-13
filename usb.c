@@ -4,7 +4,7 @@
 
 #include "define.h"
 #include "frame.h"
-#include "ftd2xx.h"
+//#include "ftd2xx.h"
 #include "usb.h"
 
 

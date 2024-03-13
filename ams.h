@@ -3,6 +3,11 @@
 
 #include "define.h"
 
+
+#ifdef _WIN32
+size_t getline(char **lineptr, size_t *n, FILE *stream);
+#endif
+
 typedef struct {
     char symbole[333];
     int note;

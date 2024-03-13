@@ -6,8 +6,9 @@
 
 FILE* initAMP(char* filename);
 
-char* readAMP(FILE* pf);
+void readAMP(FILE* pf, char * song_filename);
 
 void closeAMP(FILE* pf);
+void formatSongName(char* input, char* output);
 
 #endif //AUDISEN2024_AMP_H

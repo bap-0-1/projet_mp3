@@ -5,7 +5,7 @@
 #ifndef AUDISEN_USB_H
 #define AUDISEN_USB_H
 
-#include "ftd2xx.h"
+//#include "ftd2xx.h"
 
 FT_HANDLE initUSB();
 void closeUSB(FT_HANDLE ftHandle);
