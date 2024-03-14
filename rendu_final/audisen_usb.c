@@ -11,11 +11,6 @@ int main(){
 	char songFileName[MAX_SIZE_TITLE] = {0};
 	//Ouverture du flux usb
 	FT_HANDLE ftHandle = initUSB();
-	if (myFrmFile != NULL){
-			fclose(myFrmFile);
-			printf("Erreur, veuillez-supprimer le fichier %s", frmFileName);
-			return 1;
-	}
 	while(!feof(myPlayListFile)){
 		FILE * amsFile;
 		char amsFileNameWithFolder[MAX_SIZE_TITLE+18] = "fichiers_musicaux/";
@@ -53,6 +48,6 @@ int main(){
 
 	}
 	closeAMP(myPlayListFile);
-	closeUSB();
+	closeUSB(ftHandle);
 	return 0;
 }
