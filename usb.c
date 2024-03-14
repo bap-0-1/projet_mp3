@@ -8,20 +8,24 @@
 FT_HANDLE initUSB(){
     FT_HANDLE ftHandle;
     FT_STATUS ftStatus;
+    //Ouverture du flux usb
     ftStatus = FT_Open(0, &ftHandle);
     if(ftStatus != FT_OK){
     	return NULL;
     }
+    //Mettre la vitesse de transmission de données
     ftStatus = FT_SetBaudRate(ftHandle, FT_BAUD_9600);
     if(ftStatus != FT_OK){
     	    FT_Close(ftHandle);
 	    return NULL;
     }
+    //Mettre les informations concernant le protocole UART (nombre de bits utilisés, bit de stop, bit de parité)
     ftStatus = FT_SetDataCharacteristics(ftHandle, FT_BITS_8, FT_STOP_BITS_1, FT_PARITY_NONE);
     if (ftStatus != FT_OK){
     	FT_Close(ftHandle);
 	return NULL;
     }
+    //Ne pas mettre de flow control
     ftStatus = FT_SetFlowControl(ftHandle, FT_FLOW_NONE, 0, 0);
     if (ftStatus != FT_OK){
     	FT_Close(ftHandle);
