@@ -1,18 +1,70 @@
 
 #include "define.h"
 #include "autotests.h"
-//#include "ams.h"
+#include "ams.h"
 #include "amp.h"
 #include "frame.h"
 #define AMP_NB_TESTS 6
 
-
+/* Version uniquement pour le \r\n
 void convert_rl(char* buffer)
 {
 	char *p = strrchr(buffer, '\r');
 	if(p && p[1]=='\n' && p[2]=='\0') {
 	    p[0] = '\n';
 	    p[1] = '\0';
+	}
+}
+*/
+
+/*
+// Version capable de tout, courte, sympa pour les étudiants, pas parfaite (pas opti et ne prends pas en compte le cas avec un \n ou \r qui serait justifiable en dehors des fins de chaines (pas un problème pour ce projet)
+void convert_rl(char* buffer)
+{
+	for(int i=0;buffer[i]!='\0';i++)
+	{ 
+		if(buffer[i]=='\r' || buffer[i]=='\n') buffer[i] = '\0';
+	}
+}
+
+*/
+
+// Version opti qui gère \r\n tout comme \n tout en ne touchant pas aux eventuels \n ou autre en milieu de chaine etc.
+void convert_rl(char* buffer)
+{
+	int taille = 0;
+	int i = 0;
+
+	if (buffer!=NULL)
+	{
+		taille = strlen(buffer)+1; //+1 car caractère de fin de chaine pas inclut dans strlen
+		if (taille > 2) // on évite de parcourir tout le fichier au cas où il y ait un \n ou \r pertinent en milieu de chaine
+		{               // on ne traite que deux cas : une chaine >= à 3 en tout (probablement un \r\n\'0' et une chaine > à 2 en tout, par exemple un \n\'0'
+			for(i=taille-3;i<taille;i++)
+			{
+				if(buffer[i] == '\r' || buffer[i] == '\n')
+				{
+					buffer[i] = '\0';
+				}
+			}
+		}
+		else if (taille > 1) // Si la chaine est vraiment trop courte on ne regarde que le dernier caractere dans notre boucle for. (équivalent à tester uniquement buffer[taille-2])
+		{	
+			for(i=taille-2;i<taille;i++)
+			{
+				if(buffer[i] == '\r' || buffer[i] == '\n')
+				{
+					buffer[i] == '\0';
+				}
+			}
+		}
+		else{
+			printf("convert_rl : la chaine considérée est trop courte\n");
+		}
+	}
+	else
+	{
+		printf("convert_rl : la chaine considérée ne semble pas exister (pointeur NULL)\n");
 	}
 }
 
@@ -31,10 +83,11 @@ void printAutoTestsResults(char* testName, float mark[], int coeff[], int nTests
 	printf("Finish autotest of block %s => total score : %.1f %%\n",testName,(float)cpt/((float)max)*100);
 
 }
-/*
+
 void testReadAMS(){
 
 	s_song mySong;
+	s_song mySongRef;
 	int flag=0;
 	float mark[5]={0};
 	int coeff[5]={1,1, 1, 1, 3};
@@ -46,7 +99,35 @@ void testReadAMS(){
 	int nTicks;
 	int note[4];
 	char title[MAX_SIZE_TITLE];
-	FILE* pf;
+	//FILE* pf;
+	int array[16][4]={{11, 23, 27, 35},
+	{11, 18, 0, 0},
+	{11, 23, 0, 0},
+	{11, 27, 0, 0},
+	{11, 32, 44, 0},
+	{11, 18, 0, 0},
+	{11, 30, 42, 0},
+	{11, 18, 0, 0},
+	{11, 23, 27, 35},
+	{11, 18, 0, 0},
+	{11, 23, 0, 0},
+	{11, 27, 0, 0},
+	{11, 32, 44, 0},
+	{11, 18, 0, 0},
+	{11, 30, 42, 0},
+	{11, 18, 0, 0}};
+	strcpy(mySongRef.title,"Bohemian Rhapsody");
+	mySongRef.tpm=144;
+	mySongRef.nTicks=16;
+	mySongRef.tickTab[0].accent=1;
+	
+	
+	for(k=0;k<16;k++){
+		memcpy(mySongRef.tickTab[k].note,array[k],sizeof(int)*5);
+		mySongRef.tickTab[k].accent=1;
+
+	}
+
 	
 	// Test 1 : vérifier que la fonction renvoie une structure song vide quand le fichier ams n'existe pas
 	mySong = readAMS(".ams");
@@ -74,15 +155,19 @@ void testReadAMS(){
 
 	// Test 2
 	cpt=0;
-	s_song mySong = readAMS("fichiers_musicaux/bohemian_rhapsody.ams");
-	pf = fopen("fichiers_musicaux/bohemian_rhapsody.ref","r");
-	if(pf!=NULL){
-		printf("opening file");
-		fgets(title,MAX_SIZE_TITLE,pf);
-		convert_rl(title);
-		//title[strlen(title)-1]='\0';
-		fscanf(pf,"%d",&tpm);
-		if(strcmp(title,mySong.title)==0){
+	mySong = readAMS("fichiers_musicaux/bohemian_rhapsody.ams");
+	//pf = fopen("fichiers_musicaux/bohemian_rhapsody.ref","r");
+
+	
+	//if(pf!=NULL){
+		//printf("opening file\n");
+		//fgets(title,MAX_SIZE_TITLE,pf);
+		
+		convert_rl(mySongRef.title);
+		convert_rl(mySong.title);
+		
+		//fscanf(pf,"%d",&tpm);
+		if(strcmp(mySongRef.title,mySong.title)==0){
             mark[1]=1;
         }else{
             mark[1]=0;
@@ -90,7 +175,7 @@ void testReadAMS(){
         }
 
         cpt=0;
-		if(tpm==mySong.tpm){
+		if(mySongRef.tpm==mySong.tpm){
             mark[2]=1;
         }else{
             mark[2]=0;
@@ -99,12 +184,12 @@ void testReadAMS(){
 		i=0;
 
 		for(i=0;i<mySong.nTicks;i++){
-			fscanf(pf,"%d\t %d\t %d\t %d\t %d\n",&accent,&note[0],&note[1],&note[2],&note[3]);
+			//fscanf(pf,"%d\t %d\t %d\t %d\t %d\n",&accent,&note[0],&note[1],&note[2],&note[3]);
 			//printf("%d\t %d\t %d\t %d\t %d",accent,note[0],note[1],note[2],note[3]);
 			//getchar();
-			if(mySong.tickTab[i].accent==accent){
+			if(mySong.tickTab[i].accent==mySongRef.tickTab[i].accent){
 				for(k=0;k<4;k++){
-					if(mySong.tickTab[i].note[k]==note[k]){
+					if(mySong.tickTab[i].note[k]==mySongRef.tickTab[i].note[k]){
 						cpt++;
 					}else{
                         fprintf(stderr,"Error ReadAMS on note %d\n", i);
@@ -112,8 +197,8 @@ void testReadAMS(){
 				}
 			}
 		}
-		fscanf(pf,"%d",&nTicks);
-		if(mySong.nTicks==nTicks){
+		//fscanf(pf,"%d",&nTicks);
+		if(mySong.nTicks==mySongRef.nTicks){
             mark[3]=1;
         }else{
             mark[3]=0;
@@ -121,11 +206,11 @@ void testReadAMS(){
         }
 
 
-		fclose(pf);
+		//fclose(pf);
 
-	}
-	else{
-	printf("ERREUR, pas d'ouverture du fichier 'bohemian_rhapsody.ref'\n");}
+	//}
+	//else{
+	//printf("ERREUR, pas d'ouverture du fichier 'bohemian_rhapsody.ref'\n");}
 	if(cpt==(mySong.nTicks*4)){
 		mark[4]=1;
 	}else{
@@ -137,7 +222,7 @@ void testReadAMS(){
 
 
 
-}*/
+}
 
 void testReadAMP(){
     int cpt=0;
@@ -147,68 +232,86 @@ void testReadAMP(){
     int coeff[AMP_NB_TESTS] = {1,1,1,3,1,1};
 
     int testnb = 0; // numéro du test en cours;
-    char filename[100]="Playlist_autotest.amp";
-    char wrongfile[100]="dtfhesjs.ams";
+    char filename[100]="fichiers_musicaux/Playlist_autotest.amp";
+    char wrongfile[100]="fichiers_musicaux/dtfhesjs.ams";
 
     // TEST 1 : on verifie que le pointeur est NULL si le fichier amp n'existe pas
     FILE * pf = initAMP(wrongfile);
-    if (pf ==NULL){
+    if (pf == NULL){
         mark[nbtest] =1; // premier test de fichier vide passé
         #ifdef DEBUG
         printf("test %d AMP ok\n", nbtest);
         #endif
+    }else{
+    	fclose(pf);
     }
 
     nbtest ++;
     cpt = 0;
 
     // TEST 2 : on verifie que le fichier Playlist_autotest.amp s'ouvre bien
+    pf = fopen("fichiers_musicaux/Playlist_autotest.amp","r");
+    if(pf!=NULL){
+    	fprintf(pf,"Bohemian Rhapsody\nKnockin’On Heaven’s Door\nClocks\nImagine");
+    	fclose(pf);
+    }
+
+
     pf = initAMP(filename);
-    if (pf != NULL){
+	
+	
+	if (pf == NULL)
+	{
+		printf("Erreur d'ouverture du fichier AMP\n");
+	}
+	else
+	{
+   // if (pf != NULL){
         mark[nbtest]=1;
         #ifdef DEBUG
         printf("test %d AMP ok\n", nbtest);
         #endif
-    }
-    char songfilename[MAX_SIZE_TITLE];
-    int songnumber = 0;
-    while(!feof(pf)){ // read amp file line by line
-        readAMP(pf, songfilename);
-	nbtest ++;
-        if (!strcmp("bohemian_rhapsody.ams", songfilename) && nbtest == 2){
-            mark[nbtest]=1;
-            #ifdef DEBUG
-            printf("test %d AMP ok\n", nbtest);
-            #endif
-        }
-	if (!strcmp("knockin_on_heaven_s_door.ams", songfilename) && nbtest == 3){
-            mark[nbtest]=1;
-            #ifdef DEBUG
-            printf("test %d AMP ok\n", nbtest);
-            #endif
-        }
-	if (!strcmp("clocks.ams", songfilename) && nbtest == 4){
-            mark[nbtest]=1;
-            #ifdef DEBUG
-            printf("test %d AMP ok\n", nbtest);
-            #endif
-        }
-	if (!strcmp("imagine.ams", songfilename) && nbtest == 5){
-            mark[nbtest]=1;
-            #ifdef DEBUG
-            printf("test %d AMP ok\n", nbtest);
-            #endif
-        }
+    //}
 
-        printf("%s\n", songfilename);
+		char songfilename[MAX_SIZE_TITLE];
+		int songnumber = 0;
+		while(!feof(pf)){ // read amp file line by line
+			readAMP(pf, songfilename);
+			nbtest ++;
+			if (!strcmp("bohemian_rhapsody.ams", songfilename) && nbtest == 2){
+				mark[nbtest]=1;
+				#ifdef DEBUG
+				printf("test %d AMP ok\n", nbtest);
+				#endif
+			}
+			if (!strcmp("knockin_on_heaven_s_door.ams", songfilename) && nbtest == 3){
+				mark[nbtest]=1;
+				#ifdef DEBUG
+				printf("test %d AMP ok\n", nbtest);
+				#endif
+			}
+			if (!strcmp("clocks.ams", songfilename) && nbtest == 4){
+				mark[nbtest]=1;
+				#ifdef DEBUG
+				printf("test %d AMP ok\n", nbtest);
+				#endif
+			}
+			if (!strcmp("imagine.ams", songfilename) && nbtest == 5){
+				mark[nbtest]=1;
+				#ifdef DEBUG
+				printf("test %d AMP ok\n", nbtest);
+				#endif
+			}
 
-    }
+			printf("%s\n", songfilename);
 
+		}
+	}
     printAutoTestsResults("ReadAMP",mark,coeff,AMP_NB_TESTS);
 
 }
 
-/*
+
 void testFrame() {
     int flag=0;
     float mark[4]={0};
@@ -216,6 +319,7 @@ void testFrame() {
     char initFrame[INIT_FRAME_MAX_SIZE];
     char tickFrame[TICK_FRAME_SIZE];
     s_tick myTick;
+    int i=0;
 
     // INIT FRAMERef[]
     char initFrameRef1[INIT_FRAME_MAX_SIZE];
@@ -239,10 +343,10 @@ void testFrame() {
     if(strcmp(initFrame,initFrameRef1)==0){
     	mark[0]=1;
     }else{
-        for(int i = 0; i< INIT_FRAME_MAX_SIZE; i++){
+        for(i = 0; i< INIT_FRAME_MAX_SIZE; i++){
             printf("%2d", initFrameRef1[i]);
         }
-        for(int i = 0; i< INIT_FRAME_MAX_SIZE; i++){
+        for(i = 0; i< INIT_FRAME_MAX_SIZE; i++){
             printf("%2d", initFrame[i]);
         }
     	mark[0]=0;
@@ -293,7 +397,7 @@ void testFrame() {
 
 
 
-}*/
+}
 
 void testCreateAMS(){
 	FILE* pf1=NULL;
@@ -312,6 +416,7 @@ void testCreateAMS(){
 	pf1=fopen(amsFileName,"r");
 	if(pf1!=NULL){
 		printf("Erreur : DESTRUCTION NECESSAIRE DU FICHIER TEST.ams avant les autotests ! \n");
+		fclose(pf1);
 	}
 	
 	createAMS(txtFileName,amsFileName);
@@ -345,10 +450,11 @@ void testCreateAMS(){
 		}else{
 
 			mark[1]=(float)nCorrectLines/(float)nLines;
-            printf("CREATEAMS : nlines%.2f/%d\n", nCorrectLines, nLines);
+            printf("CREATEAMS : nlines%d/%d\n", nCorrectLines, nLines);
 		}
 
 	}
    printAutoTestsResults("CreateAMS",mark,coeff,2);
+   fclose(pf2);
 
 }

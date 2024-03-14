@@ -13,7 +13,7 @@
 #define N3 11
 #define N4 14
 
-#define CR 13
+#define CR7 13
 #define LF 10
 
 void createInitFrame(s_song mySong, char* frame);
