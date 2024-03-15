@@ -1,0 +1,3 @@
+/home/bap/cours/postbac/CIR3/projet_mp3/CMakeFiles/audisen.dir
+/home/bap/cours/postbac/CIR3/projet_mp3/CMakeFiles/edit_cache.dir
+/home/bap/cours/postbac/CIR3/projet_mp3/CMakeFiles/rebuild_cache.dir

@@ -6,8 +6,8 @@
 #include <string.h>
 
 FT_HANDLE initUSB(){
-    FT_HANDLE ftHandle;
-    FT_STATUS ftStatus;
+    FT_HANDLE ftHandle;//Handle asssoicé à la connection usb
+    FT_STATUS ftStatus;//Handle pour obtenir le status des operations dur le flux usb
     //Ouverture du flux usb
     ftStatus = FT_Open(0, &ftHandle);
     if(ftStatus != FT_OK){
@@ -41,7 +41,9 @@ void closeUSB(FT_HANDLE ftHandle){
 
 void writeUSB(char* frame, FT_HANDLE ftHandle){
      int nbBytesWritten;
+     //Ecriture de données dans le flux usb
      FT_Write(ftHandle, frame, strlen(frame), &nbBytesWritten);
+     //Detection d'erreur si les bits n'ont pas tous été envoyés
      if(nbBytesWritten != strlen(frame)){
      	printf("Erreur lors de l'envoi de la chaine %s\n%d/%d bits envoyés", frame, nbBytesWritten, strlen(frame));
      }

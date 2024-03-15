@@ -52,7 +52,7 @@ void createTickFrame(s_tick myTick, char* frame){
 	sprintf(buffer, "%d", myTick.accent);
 	strcat(frame, buffer);
 	//Ecriture des notes associées au tick
-	for (int i = 0; i < 4; i++){
+	for (i = 0; i < 4; i++){
 	
 		strcat(frame, ",");
 		sprintf(buffer, "%.2d", myTick.note[i]);

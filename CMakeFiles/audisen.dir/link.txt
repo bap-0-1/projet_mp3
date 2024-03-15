@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/audisen.dir/audisen_usb.c.o CMakeFiles/audisen.dir/amp.c.o CMakeFiles/audisen.dir/ams.c.o CMakeFiles/audisen.dir/frame.c.o CMakeFiles/audisen.dir/usb.c.o -o audisen 

@@ -70,9 +70,13 @@ char* replace_char(char* str, char find, char replace){
 s_song readAMS(char* fileName){
         //Définir les variables locales
         s_song mySong;
-        //mySong = (s_song)malloc(sizeof(s_song));//Il faut liberer la memoire à l'adresse retournée en fin de prgrm
         int charRead;
         s_tick myCurrentTick;
+	myCurrentTick.note[0] = 0;
+	myCurrentTick.note[1] = 0;
+	myCurrentTick.note[2] = 0;
+	myCurrentTick.note[3] = 0;
+	myCurrentTick.accent = 0;
         int tickNumber = 0;//Conteur du nombre de tick
         int noteNumber = 0;//Conteur du nombre de note dans le tick 
         int accordNumber = 0;//Conteur du nombre de note jouée dans le tick
@@ -142,8 +146,8 @@ s_song readAMS(char* fileName){
                         accordNumber++;
                 }
         }
-	tickNumber--;
-        free(line);
+        tickNumber--;
+	free(line);
         fclose(myFile);
         //Ajout d'un tick null (tick "de fin")
         myCurrentTick.accent = 0;

@@ -34,11 +34,14 @@ int main(){
 			txtFileName[strlen(txtFileName)-3] = 't';
 			txtFile = fopen(txtFileName, "r");
 			if (txtFile == NULL){
-				printf("Erreur, mauvais chemin de fichier");
-				return 1;
+				printf("Erreur, mauvais chemin de fichier %s et %s", txtFileName, amsFileNameWithFolder);
+				continue;
 			}
-			fclose(txtFile);
-			createAMS(txtFileName, amsFileNameWithFolder);
+			else {
+			
+				fclose(txtFile);
+				createAMS(txtFileName, amsFileNameWithFolder);
+			}
 
 		}
 		mySong = readAMS(amsFileNameWithFolder);
